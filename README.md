@@ -183,11 +183,6 @@ Follow these steps to deploy the Agentic API Framework in a local development en
 
 ### Step 1: Clone the Repository
 Retrieve the source code from the repository.
-```bash
-git clone https://github.com/your-username/AgenticApiDemo.git
-cd AgenticApiDemo
-```
-
 ### Step 2: AI Environment Setup
 This project requires a local AI instance to function in "Intelligent Mode."
 1.  **Download Ollama:** Visit [ollama.com](https://ollama.com) and install the version for your OS.
