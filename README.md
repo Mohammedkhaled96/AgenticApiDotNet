@@ -117,17 +117,38 @@ This is the system's critical reliability feature. When the primary AI brain is 
 ## 7. The AI Engine (Ollama & Llama 3.1)
 
 ### Model Architecture
-This project is configured to utilize **Llama 3.1**, a state-of-the-art open-source Large Language Model, hosted locally via **Ollama**.
+This project is configured to utilize a powerful open-source Large Language Model, hosted locally via **Ollama**.
 
 *   **Why Local AI?** By running the model locally, the system achieves zero-latency data privacy (no data leaves the infrastructure), significantly reduced operational costs (no per-token API fees), and full control over the inference environment.
-*   **Integration:** The system uses the **Microsoft Semantic Kernel** to interface with the local Ollama endpoint (`http://localhost:11434/v1`). The kernel treats Llama 3.1 not just as a text generator, but as a **reasoning engine** capable of selecting the correct plugin tool based on semantic intent.
+*   **Integration:** The system uses the **Microsoft Semantic Kernel** to interface with the local Ollama endpoint (`http://localhost:11434/v1`). The kernel treats the LLM not just as a text generator, but as a **reasoning engine** capable of selecting the correct plugin tool based on semantic intent.
 
 ### Configuration
-While `llama3.1` is the default, the architecture is model-agnostic. The `appsettings.json` configuration allows for seamless hot-swapping to other models (e.g., `mistral`, `gemma`) or even remote endpoints (Azure OpenAI) by modifying the `AI:ModelId` and `AI:Endpoint` values.
+The `appsettings.json` file allows for seamless hot-swapping to other models or even remote endpoints by modifying the `AI:ModelId` and `AI:Endpoint` values. The current configuration is set to:
+
+```json
+"AI": {
+  "ModelId": "gpt-oss:120b-cloud",
+  "Endpoint": "http://localhost:11434/v1"
+}
+```
 
 ---
 
-## 8. API Usage Patterns (Examples)
+## 8. Database Configuration
+
+The application is configured to use a MySQL database by default. The connection string is located in the `appsettings.json` file.
+
+```json
+"ConnectionStrings": {
+  "DefaultConnection": "Server=localhost;Database=agentic_db;User=root;Password=YOUR_PASSWORD;"
+}
+```
+
+If you wish to use a different database provider, you can modify the connection string and install the corresponding Entity Framework Core provider. The application will automatically detect the provider and configure the database context accordingly.
+
+---
+
+## 9. API Usage Patterns (Examples)
 
 The following examples illustrate the interaction with the `Converse` endpoint, demonstrating how natural language is translated into structured business actions.
 
@@ -172,7 +193,7 @@ The following examples illustrate the interaction with the `Converse` endpoint, 
 
 ---
 
-## 9. Quick Start Guide (Deployment)
+## 10. Quick Start Guide (Deployment)
 
 Follow these steps to deploy the Agentic API Framework in a local development environment.
 
@@ -186,9 +207,9 @@ Retrieve the source code from the repository.
 ### Step 2: AI Environment Setup
 This project requires a local AI instance to function in "Intelligent Mode."
 1.  **Download Ollama:** Visit [ollama.com](https://ollama.com) and install the version for your OS.
-2.  **Pull the Model:** Open your terminal and run the following command to download the Llama 3.1 model.
+2.  **Pull the Model:** Open your terminal and run the following command to download the model specified in `appsettings.json`.
     ```bash
-    ollama pull llama3.1
+    ollama pull gpt-oss:120b-cloud
     ```
 3.  **Verify Execution:** Ensure Ollama is running (default port 11434) by visiting `http://localhost:11434` in your browser.
     *   *Note: If you do not wish to install Ollama, the project will automatically default to the **Fallback Agent**, ensuring full functionality via the rule-based engine described in Section 3.*
@@ -198,13 +219,13 @@ Open the `appsettings.json` file.
 *   **Database:** If using MySQL, update the `ConnectionStrings:DefaultConnection` with your server credentials (User/Password).
     ```json
     "ConnectionStrings": {
-      "DefaultConnection": "Server=localhost;Database=agentic_db;User=YOUR_USER;Password=YOUR_PASSWORD;"
+      "DefaultConnection": "Server=localhost;Database=agentic_db;User=root;Password=YOUR_PASSWORD;"
     }
     ```
 *   **AI Model:** Verify the endpoint matches your Ollama setup.
     ```json
     "AI": {
-      "ModelId": "llama3.1",
+      "ModelId": "gpt-oss:120b-cloud",
       "Endpoint": "http://localhost:11434/v1"
     }
     ```
