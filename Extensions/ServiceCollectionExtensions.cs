@@ -49,7 +49,7 @@ namespace AgenticApiDemo.Extensions
             services.AddScoped<Kernel>(sp =>
             {
                 var config = sp.GetRequiredService<IConfiguration>();
-                var modelId = config["AI:ModelId"] ?? "llama3.1";
+                var modelId = config["AI:ModelId"] ?? "gpt-oss:120b-cloud";
                 var endpoint = config["AI:Endpoint"] ?? "http://localhost:11434/v1"; 
                 var apiKey = "ollama"; 
 
