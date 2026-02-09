@@ -20,13 +20,11 @@ namespace AgenticApiDemo.Controllers
         private readonly Kernel _kernel;
         private readonly ILogger<AgentController> _logger;
         private readonly ActivitySource _activitySource;
-        private readonly IFallbackAgentService _fallbackAgent;
 
-        public AgentController(Kernel kernel, ILogger<AgentController> logger, IFallbackAgentService fallbackAgent)
+        public AgentController(Kernel kernel, ILogger<AgentController> logger)
         {
             _kernel = kernel;
             _logger = logger;
-            _fallbackAgent = fallbackAgent;
             _activitySource = new ActivitySource("AgenticApi.Agent");
         }
 
@@ -56,7 +54,9 @@ namespace AgenticApiDemo.Controllers
                     "CORE RESPONSIBILITIES:\n" +
                     "1. Support multiple languages, including Arabic and English.\n" +
                     "2. Use the provided tools to manage users (Create, Read, Update, Delete).\n" +
-                    "3. If a user request is ambiguous, ASK for clarification instead of guessing.\n\n" +
+                    "3. SEARCH BEFORE ACTION: If you need to update or delete a user and you don't have their numeric ID, you MUST call 'UserApi-GetAllUsers' first to find it. Never use placeholders like 'ID_HERE'.\n" +
+                    "4. TALK NORMALLY: Never tell the user about the technical tool names (e.g., don't say 'I am calling UserApi-GetAllUsers'). Just perform the action and tell them the result.\n" +
+                    "5. If a request is missing critical data (like name for registration), ask for it.\n\n" +
                     "AVAILABLE TOOLS:\n" +
                     "- UserApi-RegisterUser: Registers a new user. REQUIRED: Name, Age, Job Title.\n" +
                     "- UserApi-UpdateUser: Updates existing user. REQUIRED: User ID.\n" +
@@ -66,22 +66,11 @@ namespace AgenticApiDemo.Controllers
                     "- UserApi-GetUserById: Gets a user. REQUIRED: User ID.\n\n" +
                     "RESPONSE GUIDELINES:\n" +
                     "- After a tool executes, confirm the action in the SAME language the user used.\n" +
-                    "- Include key details (ID, Name) in your confirmation.\n" +
-                    "- If the tool fails, explain why based on the error message."
+                    "- If the tool fails, explain why clearly without being overly technical."
                 );
                 history.AddUserMessage(request.Prompt);
 
-                ChatMessageContent result;
-                try 
-                {
-                    result = await chatCompletionService.GetChatMessageContentAsync(history, settings, _kernel);
-                }
-                catch (Exception ex) when (ex.InnerException is System.Net.Http.HttpRequestException || ex.Message.Contains("refused"))
-                {
-                    _logger.LogWarning("Ollama/AI is offline. Switching to Fallback Rule-Based Agent.");
-                    var fallbackResponse = await _fallbackAgent.ExecuteFallbackLogic(request.Prompt, _kernel);
-                    result = new ChatMessageContent(AuthorRole.Assistant, fallbackResponse);
-                }
+                var result = await chatCompletionService.GetChatMessageContentAsync(history, settings, _kernel);
 
                 stopwatch.Stop();
                 

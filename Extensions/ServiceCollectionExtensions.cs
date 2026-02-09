@@ -49,16 +49,18 @@ namespace AgenticApiDemo.Extensions
             services.AddScoped<Kernel>(sp =>
             {
                 var config = sp.GetRequiredService<IConfiguration>();
-                var modelId = config["AI:ModelId"] ?? "gpt-oss:120b-cloud";
-                var endpoint = config["AI:Endpoint"] ?? "http://localhost:11434/v1"; 
-                var apiKey = "ollama"; 
+                var modelId = config["AI:ModelId"] ?? "llama3.2:3b";
+                var endpoint = config["AI:Endpoint"] ?? "http://localhost:11434"; 
 
                 var kernelBuilder = Kernel.CreateBuilder();
 
+                // Using OpenAI Connector to talk to Ollama (Standard approach to avoid alpha package bugs)
+                var ollamaEndpoint = $"{endpoint.TrimEnd('/')}/v1";
+                
                 kernelBuilder.AddOpenAIChatCompletion(
                     modelId: modelId,
-                    apiKey: apiKey,
-                    httpClient: new HttpClient { BaseAddress = new Uri(endpoint), Timeout = TimeSpan.FromMinutes(10) });
+                    apiKey: "ollama", // Dummy key for local Ollama
+                    httpClient: new HttpClient { BaseAddress = new Uri(ollamaEndpoint) });
 
                 var userApiPlugin = sp.GetRequiredService<UserApiPlugin>();
                 kernelBuilder.Plugins.AddFromObject(userApiPlugin, "UserApi");
