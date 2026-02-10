@@ -58,14 +58,14 @@ namespace AgenticApiDemo.Services
                 int age = ageMatch.Success && int.TryParse(ageMatch.Groups[1].Value, out int a) ? a : 25;
 
                 // 3. Extract Job
-                // English: "job is X", "works as X", "job title is X"
-                var jobMatch = Regex.Match(prompt, @"(?:job(?:\s+title)?\s+(?:is|works\s+as))\s+(.+?)(?:$|[.,])", RegexOptions.IgnoreCase);
+                // English: "job Architect", "job is Architect", "works as Architect"
+                var jobMatch = Regex.Match(prompt, @"(?:job(?:\s+title)?(?:\s+(?:is|works\s+as))?|works)\s+(.+?)(?:$|[.,])", RegexOptions.IgnoreCase);
                 
-                // Arabic: "وظيفته X", "يعمل X" (handling potential 'and' prefix 'و')
+                // Arabic: "وظيفته X", "يعمل X", "وظيفة X" (handling potential 'and' prefix 'و')
                 if (!jobMatch.Success)
                 {
                     // Improved Regex: Allow optional 'و' at the start of the keyword
-                    jobMatch = Regex.Match(prompt, @"(?:(?:^|\s)و?)(?:وظيفته|يعمل|شغال)\s+(.+?)(?:$|[.,])", RegexOptions.Singleline);
+                    jobMatch = Regex.Match(prompt, @"(?:(?:^|\s)و?)(?:وظيفته|يعمل|شغال|وظيفة)\s+(.+?)(?:$|[.,])", RegexOptions.Singleline);
                 }
 
                 var job = jobMatch.Success ? jobMatch.Groups[1].Value.Trim() : "Unknown";

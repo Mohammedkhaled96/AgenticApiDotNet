@@ -77,18 +77,66 @@ The system automatically applies migrations at startup. If the `Users` table alr
 
 ---
 
-## 7. API Usage Patterns (Examples)
+## 7. Deep Dive: The Fallback Agent Service (`FallbackAgentService`)
 
-### Scenario: Autonomous Registration & Search
-**User:** "Register a user named Mohamed Khaled, age 30, Software Engineer."
-**Agent Response:** *"The user 'Mohamed Khaled' has been successfully registered with ID 4. He is 30 years old and works as a Software Engineer."*
+In production environments, dependence on a single AI provider (like Ollama or OpenAI) introduces a single point of failure. The **Fallback Agent Service** is a deterministic, regex-based logic layer that activates automatically when the primary AI service is unavailable, unreachable, or returns an error.
 
-**User:** "Now change his job title to Technical Lead."
-**Agent Action:**
-1.  Calls `GetAllUsers` to find Mohamed's ID.
-2.  Finds ID 4.
-3.  Calls `UpdateUser(id: 4, jobTitle: "Technical Lead")`.
-**Agent Response:** *"I have updated Mohamed Khaled's job title to Technical Lead."*
+### Why is this Critical?
+This service ensures **Business Continuity**. Users can still perform critical operations (Registration, Retrieval, Updates, Deletions) using natural language, even if the "AI Brain" is offline. It acts as a safety net, maintaining the illusion of intelligence through advanced pattern matching.
+
+### When is it Used?
+The `AgentController` wraps the Semantic Kernel AI call in a `try-catch` block.
+1.  **Primary Attempt:** The system attempts to send the user's prompt to the LLM (e.g., Llama 3.2).
+2.  **Failure Detection:** If the LLM call throws an exception (Timeout, Connection Refused, Model not found).
+3.  **Activation:** The controller catches the exception and immediately delegates the request to `_fallbackService.ExecuteFallbackLogic(prompt)`.
+
+### How it Works (Technical Details)
+The service parses natural language using C# `System.Text.RegularExpressions` to map intent and extract entities. It supports both **English** and **Arabic**.
+
+#### 1. Registration Logic (Intent: "Register", "Create", "Add", "سجل", "انشئ")
+It extracts three key entities using cascading Regex patterns:
+*   **Name:**
+    *   *English:* Looks for "name is X" or "named X".
+    *   *Arabic:* Looks for "اسمه X" or "اسم X".
+*   **Age:**
+    *   *English:* Looks for "age is N" or "N years".
+    *   *Arabic:* Looks for "عمره N" or "سن N".
+    *   *Default:* Defaults to 25 if not found.
+*   **Job Title:**
+    *   *English:* Looks for "job X", "job is X", "works as X".
+    *   *Arabic:* Looks for "وظيفته X", "يعمل X".
+
+#### 2. Update Logic (Intent: "Update", "Change", "تعديل", "غير" + "ID")
+*   **Constraint:** Requires an explicit ID (e.g., "id 5") to be present in the prompt.
+*   **Extraction:** updates Name, Age, or Job if the corresponding keywords are found in the string.
+
+#### 3. Query Logic (Intent: "Get", "Show", "List", "هات", "عرض")
+*   **List All:** If keywords like "all", "users", "الكل" are found, it invokes `GetAllUsers`.
+*   **Get Single:** If "id X" is found, it invokes `GetUserById`.
+
+### Comparative Analysis: AI vs. Fallback
+
+| Feature | Primary AI (Llama 3.2) | Fallback Agent (Regex) |
+| :--- | :--- | :--- |
+| **Technology** | Large Language Model (Probabilistic) | C# Regex (Deterministic) |
+| **Availability** | Dependent on external service/GPU | Always Available (Embedded Code) |
+| **Understanding** | Deep contextual understanding | Keyword & Pattern based |
+| **Flexibility** | Can handle "Update the guy who is a driver" | Strict: "Update user id 5" |
+| **Latency** | 100ms - 2000ms | < 5ms |
+| **Response Style** | Natural, varied conversation | Structured, template-based |
+| **Multi-turn** | Supports conversation history | Single-turn execution only |
+
+### Example Responses
+
+**Scenario 1: Register User**
+*   **User Prompt:** "Register a user named Sarah age 28 job Doctor"
+*   **AI Response:** "I have successfully registered Sarah. She is 28 years old and works as a Doctor. Her User ID is 12."
+*   **Fallback Response:** `[Fallback Agent - AR/EN] I've registered the user successfully. (AI was offline, used logic). Details: User [ID: 12] Name: Sarah, Age: 28, Job: Doctor`
+
+**Scenario 2: Unknown Command**
+*   **User Prompt:** "What is the capital of France?"
+*   **AI Response:** "I am an agent focused on User Management. I cannot answer geography questions, but I can help you register a user."
+*   **Fallback Response:** `[Fallback Agent] I understood you want to do something, but since the AI brain (Ollama) is offline, I can only handle 'Register', 'Get Users', and 'Delete All' commands...`
 
 ---
 

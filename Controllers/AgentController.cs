@@ -18,12 +18,14 @@ namespace AgenticApiDemo.Controllers
     public class AgentController : ControllerBase
     {
         private readonly Kernel _kernel;
+        private readonly IFallbackAgentService _fallbackService;
         private readonly ILogger<AgentController> _logger;
         private readonly ActivitySource _activitySource;
 
-        public AgentController(Kernel kernel, ILogger<AgentController> logger)
+        public AgentController(Kernel kernel, IFallbackAgentService fallbackService, ILogger<AgentController> logger)
         {
             _kernel = kernel;
+            _fallbackService = fallbackService;
             _logger = logger;
             _activitySource = new ActivitySource("AgenticApi.Agent");
         }
@@ -35,10 +37,10 @@ namespace AgenticApiDemo.Controllers
         public async Task<IActionResult> Converse([FromBody] AgentRequest request)
         {
             using var activity = _activitySource.StartActivity("AgentConversation");
+            var stopwatch = Stopwatch.StartNew();
             
             try
             {
-                var stopwatch = Stopwatch.StartNew();
                 _logger.LogInformation("Processing agent request: {Prompt}", request.Prompt);
 
                 var chatCompletionService = _kernel.GetRequiredService<IChatCompletionService>();
@@ -85,12 +87,29 @@ namespace AgenticApiDemo.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "An unexpected error occurred in the Converse endpoint.");
-                return Problem(
-                    detail: "An unexpected error occurred. Please try again later.",
-                    instance: HttpContext.Request.Path,
-                    statusCode: 500
-                );
+                _logger.LogWarning(ex, "Primary AI failed or is unavailable. Attempting fallback logic for prompt: {Prompt}", request.Prompt);
+
+                try
+                {
+                    var fallbackResult = await _fallbackService.ExecuteFallbackLogic(request.Prompt, _kernel);
+                    
+                    stopwatch.Stop();
+                    return Ok(new AgentResponse
+                    {
+                        Success = true,
+                        Message = fallbackResult,
+                        ExecutionTimeMs = stopwatch.ElapsedMilliseconds
+                    });
+                }
+                catch (Exception fallbackEx)
+                {
+                    _logger.LogError(fallbackEx, "Fallback logic also failed.");
+                    return Problem(
+                        detail: "The AI service is currently unavailable, and the fallback mechanism failed.",
+                        instance: HttpContext.Request.Path,
+                        statusCode: 500
+                    );
+                }
             }
         }
     }
