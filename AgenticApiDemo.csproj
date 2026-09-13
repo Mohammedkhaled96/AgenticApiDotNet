@@ -22,7 +22,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="9.0.0-rc.2.24474.3" />
-    <PackageReference Include="Microsoft.SemanticKernel.Connectors.OpenAI" Version="1.31.0" />
+    <PackageReference Include="Microsoft.SemanticKernel.Connectors.OpenAI" Version="1.80.1" />
     
     <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="9.0.0" />
     
