@@ -1,5 +1,12 @@
 # Agentic API Framework: Architectural Deep Dive (v1.1)
 
+[![CI](https://github.com/Mohammedkhaled96/AgenticApi/actions/workflows/ci.yml/badge.svg)](https://github.com/Mohammedkhaled96/AgenticApi/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/Mohammedkhaled96/AgenticApi/actions/workflows/codeql.yml/badge.svg)](https://github.com/Mohammedkhaled96/AgenticApi/actions/workflows/codeql.yml)
+![.NET 9](https://img.shields.io/badge/.NET-9.0-512BD4?logo=dotnet&logoColor=white)
+![Semantic Kernel](https://img.shields.io/badge/Semantic%20Kernel-1.31-0078D4)
+![Ollama](https://img.shields.io/badge/Ollama-Llama%203.2-000000)
+![MySQL](https://img.shields.io/badge/MySQL-EF%20Core%209-4479A1?logo=mysql&logoColor=white)
+
 ## 1. Executive Summary
 
 ### System Overview
