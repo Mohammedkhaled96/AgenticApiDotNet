@@ -5,6 +5,23 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    # The app targets .NET 9 and Pomelo MySQL 9: stay on the 9.x line
+    ignore:
+      - dependency-name: 'Microsoft.EntityFrameworkCore*'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'Microsoft.Extensions.*'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'Pomelo.EntityFrameworkCore.*'
+        update-types: ['version-update:semver-major']
+    groups:
+      semantic-kernel:
+        patterns: ['Microsoft.SemanticKernel*']
+      ef-core:
+        patterns: ['Microsoft.EntityFrameworkCore*', 'Pomelo.EntityFrameworkCore.*']
+      serilog:
+        patterns: ['Serilog*']
+      test-tooling:
+        patterns: ['Microsoft.NET.Test.Sdk', 'xunit*']
 
   - package-ecosystem: github-actions
     directory: /
