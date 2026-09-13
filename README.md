@@ -167,3 +167,18 @@ It extracts three key entities using cascading Regex patterns:
     ```
 
 Access the **Swagger UI** at `http://localhost:5244/swagger` to begin interacting with your autonomous agent.
+
+---
+
+## 9. Testing & CI/CD
+
+The `tests/AgenticApiDemo.Tests` project (xUnit) covers:
+
+*   **`UserService`** — CRUD and filtering against an in-memory SQLite database.
+*   **`FallbackAgentService`** — English and Arabic intent detection and entity extraction, using a fake `UserApi` Semantic Kernel plugin (no LLM or database required).
+
+```bash
+dotnet test
+```
+
+GitHub Actions builds and tests every push and pull request to `main`, CodeQL scans the code for security issues, and Dependabot keeps NuGet packages and actions up to date.
