@@ -1,0 +1,78 @@
+# Full local stack: API + MySQL + Ollama.
+#
+#   cp .env.example .env     # then set MYSQL_ROOT_PASSWORD
+#   docker compose up -d --build
+#   docker compose run --rm ollama-pull     # one-time model download
+#
+# Swagger: http://localhost:8080/swagger   Health: http://localhost:8080/health
+
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: agentic-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?set MYSQL_ROOT_PASSWORD in .env}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-agentic_db}
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-p$$MYSQL_ROOT_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: agentic-ollama
+    restart: unless-stopped
+    ports:
+      - "${OLLAMA_PORT:-11434}:11434"
+    volumes:
+      - ollama-models:/root/.ollama
+    healthcheck:
+      test: ["CMD-SHELL", "ollama list >/dev/null 2>&1 || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 20s
+
+  # One-shot helper: downloads the model into the shared volume, then exits.
+  ollama-pull:
+    image: ollama/ollama:latest
+    depends_on:
+      ollama:
+        condition: service_healthy
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+    entrypoint: ["ollama", "pull", "${AI_MODEL_ID:-llama3.2:3b}"]
+    restart: "no"
+    profiles: ["setup"]
+
+  api:
+    build:
+      context: .
+      target: runtime
+    image: agentic-api:local
+    container_name: agentic-api
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      ollama:
+        condition: service_started
+    environment:
+      # Double underscore maps to the nested appsettings keys.
+      ConnectionStrings__DefaultConnection: "Server=mysql;Port=3306;Database=${MYSQL_DATABASE:-agentic_db};User=root;Password=${MYSQL_ROOT_PASSWORD};"
+      AI__Endpoint: "http://ollama:11434"
+      AI__ModelId: "${AI_MODEL_ID:-llama3.2:3b}"
+      ASPNETCORE_ENVIRONMENT: "${ASPNETCORE_ENVIRONMENT:-Development}"
+    ports:
+      - "${API_PORT:-8080}:8080"
+
+volumes:
+  mysql-data:
+  ollama-models:

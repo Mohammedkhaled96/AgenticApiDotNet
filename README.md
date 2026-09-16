@@ -170,6 +170,47 @@ Access the **Swagger UI** at `http://localhost:5244/swagger` to begin interactin
 
 ---
 
+## 8b. Run Everything with Docker (recommended for teams)
+
+One command starts the API, MySQL and Ollama together, with identical package
+versions on every machine — no local MySQL or Ollama install, and no
+"works on my machine" drift.
+
+**Prerequisites:** Docker Desktop (or Docker Engine + Compose v2).
+
+```bash
+cp .env.example .env          # then set MYSQL_ROOT_PASSWORD
+docker compose up -d --build  # API + MySQL + Ollama
+docker compose --profile setup run --rm ollama-pull   # one-time model download
+```
+
+*   **Swagger:** `http://localhost:8080/swagger`
+*   **Health:** `http://localhost:8080/health`
+*   **Logs:** `docker compose logs -f api`
+*   **Stop:** `docker compose down` (add `-v` to also delete the database and model volumes)
+
+### How configuration works
+
+No secret is baked into the image. Compose passes settings as environment
+variables, where `__` maps to nested `appsettings.json` keys:
+
+| Variable | Overrides |
+|---|---|
+| `ConnectionStrings__DefaultConnection` | database connection (points at the `mysql` service) |
+| `AI__Endpoint` | `http://ollama:11434` |
+| `AI__ModelId` | `llama3.2:3b` by default |
+
+`.env` holds your real password and is git-ignored. The API waits for MySQL to
+report healthy before starting, then applies EF Core migrations automatically.
+
+### Running the tests in Docker
+
+```bash
+docker build --target test .
+```
+
+---
+
 ## 9. Testing & CI/CD
 
 The `tests/AgenticApiDemo.Tests` project (xUnit) covers:

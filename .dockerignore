@@ -1,0 +1,28 @@
+# Build output and IDE state - never send these to the build context
+**/bin/
+**/obj/
+**/bin_mysql/
+**/.vs/
+**/.vscode/
+**/.idea/
+
+# Git and CI
+.git/
+.github/
+.gitignore
+.gitattributes
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose*.yml
+
+# Local secrets and logs
+.env
+**/appsettings.*.local.json
+**/*.user
+logs/
+*.log
+
+# Docs
+*.md
