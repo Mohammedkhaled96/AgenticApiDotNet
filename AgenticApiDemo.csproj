@@ -34,7 +34,7 @@
     <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
     
     <!-- Swagger -->
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="10.3.0" />
   </ItemGroup>
 
   <ItemGroup>
