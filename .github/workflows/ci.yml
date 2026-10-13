@@ -39,3 +39,56 @@ jobs:
 
       - name: Test
         run: dotnet test AgenticApiDemo.sln -c Release --no-build --verbosity normal
+
+  docker:
+    name: Docker image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Run tests inside the image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: test
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build runtime image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: runtime
+          push: false
+          load: true
+          tags: agentic-api:ci
+          cache-from: type=gha
+
+      - name: Start API + MySQL from docker compose
+        env:
+          MYSQL_ROOT_PASSWORD: ci-only-${{ github.run_id }}
+        run: |
+          echo "MYSQL_ROOT_PASSWORD=$MYSQL_ROOT_PASSWORD" > .env
+          docker compose config --quiet
+          docker compose up -d --wait mysql api
+
+      - name: Check /health responds
+        run: |
+          for i in $(seq 1 30); do
+            if curl -fsS http://localhost:8080/health; then
+              echo "healthy after ${i} attempts"; exit 0
+            fi
+            sleep 2
+          done
+          echo "::error::API did not become healthy"
+          docker compose logs api
+          exit 1
+
+      - name: Tear down
+        if: always()
+        run: docker compose down -v
